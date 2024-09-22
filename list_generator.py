@@ -7,7 +7,7 @@ from urllib.request import urlretrieve as download
 from dns import asyncresolver
 
 # Ограничение количества одновременных запросов
-SEMAPHORE_LIMIT = 100
+SEMAPHORE_LIMIT = 200
 DELAY_RANGE = (1, 3)  # задержка между запросами от 1 до 3 секунд
 
 semaphore = asyncio.Semaphore(SEMAPHORE_LIMIT)
