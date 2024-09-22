@@ -1,0 +1,54 @@
+name: Update Lists
+
+on:
+  push:
+    paths:
+      - '*.py'
+      - 'requirements.txt'
+      - 'dns_resolvers.yml'
+      - '.github/workflows/update_lists.yml'
+  workflow_dispatch:
+    
+jobs:
+  update-lists:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+
+      - name: Check Python3 Version
+        run: python3 --version
+
+      - name: Install Dependencies
+        run: |
+          pip3 install --upgrade pip
+          pip3 install -r requirements.txt
+
+      - name: Generating IP Lists
+        run: python3 ./list_generator.py
+
+      - name: Generating CIDR Lists
+        run: python3 ./generate_cidr.py
+
+      - name: Update IP count in README.md
+        run: |
+          TOTAL_IPS=$(cat ipv4_list.txt | wc -l)
+          sed -i "s|$(grep -oP '\d+(?=\*\*$)' README.md)|$TOTAL_IPS|1" README.md
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add ipv4_list.txt cidr4.txt README.md
+          git commit -m 'Updated Lists [Automated]'
+          git pull
+          git push
+
+      - name: Check diff
+        run: git diff HEAD~1..HEAD
