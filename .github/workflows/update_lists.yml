@@ -8,6 +8,8 @@ on:
       - 'dns_resolvers.yml'
       - '.github/workflows/update_lists.yml'
   workflow_dispatch:
+  schedule:
+    - cron: "*/20 * * * *"  # Запуск каждые 20 минут
     
 jobs:
   update-lists:
