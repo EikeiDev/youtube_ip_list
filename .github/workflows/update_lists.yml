@@ -9,11 +9,11 @@ on:
       - '.github/workflows/update_lists.yml'
   workflow_dispatch:
   schedule:
-    - cron: "*/60 * * * *"  # Запуск каждые 20 минут
+    - cron: "*/60 * * * *"  # Запуск каждые 60 минут
     
 jobs:
   update-lists:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
