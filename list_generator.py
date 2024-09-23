@@ -7,7 +7,7 @@ from urllib.request import urlretrieve as download
 from dns import asyncresolver
 
 # Ограничение количества одновременных запросов
-SEMAPHORE_LIMIT = 100
+SEMAPHORE_LIMIT = 150
 DELAY_RANGE = (1, 3)  # задержка между запросами от 1 до 3 секунд
 
 semaphore = asyncio.Semaphore(SEMAPHORE_LIMIT)
@@ -24,9 +24,8 @@ def get_ip_fetcher():
     ares = asyncresolver.Resolver(configure=False)
 
     # load resolvers from dns_resolvers.yaml
-    resolvers_file = open('dns_resolvers.yml', mode='r', encoding='utf-8')
-    ares.nameservers = load(resolvers_file, Loader=Loader)
-    resolvers_file.close()
+    with open('dns_resolvers.yml', mode='r', encoding='utf-8') as resolvers_file:
+        ares.nameservers = load(resolvers_file, Loader=Loader)
 
     # specify timeout and lifetime
     ares.timeout = 10
@@ -35,17 +34,23 @@ def get_ip_fetcher():
     # shuffle resolvers in hopes of finding more ips
     shuffle(ares.nameservers)
 
-    async def ip_fetcher(domain: str, query: str, ipList: IPList):
+    async def ip_fetcher(domain: str, query: str, ipList: IPList, retries: int = 3):
         async with semaphore:
-            try:
-                # Добавляем рандомную задержку перед запросом
-                await asyncio.sleep(random.uniform(*DELAY_RANGE))
+            for attempt in range(retries):
+                try:
+                    # Добавляем рандомную задержку перед запросом
+                    await asyncio.sleep(random.uniform(*DELAY_RANGE))
 
-                # get ips
-                ips = await ares.resolve(domain, query)
-            except Exception as e:
-                print(f"Error resolving {domain}: {e}")
-                return
+                    # get ips
+                    ips = await ares.resolve(domain, query)
+                    break  # Если запрос успешен, выходим из цикла
+                except Exception as e:
+                    if attempt < retries - 1:
+                        print(f"Attempt {attempt + 1}/{retries} failed for {domain}: {e}. Retrying...")
+                        await asyncio.sleep(1)  # Небольшая задержка перед повторной попыткой
+                    else:
+                        print(f"Error resolving {domain}: {e}")
+                        return
 
             ips = [ip_address(i) for i in ips]
 
