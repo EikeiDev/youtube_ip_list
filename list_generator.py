@@ -7,7 +7,7 @@ from urllib.request import urlretrieve as download
 from dns import asyncresolver
 
 # Ограничение количества одновременных запросов
-SEMAPHORE_LIMIT = 150
+SEMAPHORE_LIMIT = 100
 DELAY_RANGE = (1, 3)  # задержка между запросами от 1 до 3 секунд
 
 semaphore = asyncio.Semaphore(SEMAPHORE_LIMIT)
@@ -24,8 +24,8 @@ def get_ip_fetcher():
     ares = asyncresolver.Resolver(configure=False)
 
     # load resolvers from dns_resolvers.yaml
-    with open('dns_resolvers.yml', mode='r', encoding='utf-8') as resolvers_file:
-        ares.nameservers = load(resolvers_file, Loader=Loader)
+    with open('dns_resolvers.json', mode='r', encoding='utf-8') as resolvers_file:
+        ares.nameservers = json.load(resolvers_file)
 
     # specify timeout and lifetime
     ares.timeout = 10
@@ -35,34 +35,36 @@ def get_ip_fetcher():
     shuffle(ares.nameservers)
 
     async def ip_fetcher(domain: str, query: str, ipList: IPList, retries: int = 3):
-        async with semaphore:
-            for attempt in range(retries):
+        for attempt in range(retries):
+            current_resolver = ares.nameservers[attempt % len(ares.nameservers)]
+            resolver = asyncresolver.Resolver(configure=False)
+            resolver.nameservers = [current_resolver]
+            resolver.timeout = ares.timeout
+            resolver.lifetime = ares.lifetime
+
+            async with semaphore:
                 try:
                     # Добавляем рандомную задержку перед запросом
                     await asyncio.sleep(random.uniform(*DELAY_RANGE))
 
                     # get ips
-                    ips = await ares.resolve(domain, query)
-                    break  # Если запрос успешен, выходим из цикла
+                    ips = await resolver.resolve(domain, query)
+                    ips = [ip_address(i) for i in ips]
+
+                    # filter only IPv4 addresses
+                    ips = [ip for ip in ips if isinstance(ip, IPv4Address)]
+
+                    # print ips format 'example.com IN A [192.0.2.1, ...]'
+                    print(domain, 'IN', query, ips)
+
+                    # append the ips for listing
+                    ipList += ips
+                    return  # Успех, выходим из функции
                 except Exception as e:
-                    if attempt < retries - 1:
-                        print(f"Attempt {attempt + 1}/{retries} failed for {domain}: {e}. Retrying...")
-                        await asyncio.sleep(1)  # Небольшая задержка перед повторной попыткой
-                    else:
-                        print(f"Error resolving {domain}: {e}")
-                        return
+                    print(f"Error resolving {domain} with resolver {current_resolver}: {e}")
 
-            ips = [ip_address(i) for i in ips]
-
-            # filter only IPv4 addresses
-            ips = [ip for ip in ips if isinstance(ip, IPv4Address)]
-
-            # print ips format 'example.com IN A [192.0.2.1, ...]'
-            print(domain, 'IN', query, ips)
-
-            # append the ips for listing
-            ipList += ips
-
+        print(f"All attempts to resolve {domain} failed.")
+        
     return ip_fetcher
 
 
