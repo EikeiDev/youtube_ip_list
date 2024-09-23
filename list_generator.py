@@ -5,7 +5,6 @@ from ipaddress import IPv4Address, ip_address
 from random import shuffle
 from urllib.request import urlretrieve as download
 from dns import asyncresolver
-import json
 
 # Ограничение количества одновременных запросов
 SEMAPHORE_LIMIT = 100
@@ -25,8 +24,8 @@ def get_ip_fetcher():
     ares = asyncresolver.Resolver(configure=False)
 
     # load resolvers from dns_resolvers.yaml
-    with open('dns_resolvers.json', mode='r', encoding='utf-8') as resolvers_file:
-        ares.nameservers = json.load(resolvers_file)
+    with open('dns_resolvers.yml', mode='r', encoding='utf-8') as resolvers_file:
+        ares.nameservers = load(resolvers_file, Loader=Loader)
 
     # specify timeout and lifetime
     ares.timeout = 10
