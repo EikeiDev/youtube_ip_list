@@ -5,6 +5,7 @@ from ipaddress import IPv4Address, ip_address
 from random import shuffle
 from urllib.request import urlretrieve as download
 from dns import asyncresolver
+import json
 
 # Ограничение количества одновременных запросов
 SEMAPHORE_LIMIT = 100
