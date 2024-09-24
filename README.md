@@ -1,6 +1,6 @@
 # GVT1.com and Googlevideo.com list
 
-Количество записей
+Количество записей:
 **10219**
 YouTube IPs.
 
