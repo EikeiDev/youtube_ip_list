@@ -1,4 +1,4 @@
-# gvt and googlevideo list
+# GVT1.com and Googlevideo.com list
 
 Количество записей
 **10219**
