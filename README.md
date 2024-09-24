@@ -1,7 +1,7 @@
 # GVT1.com and Googlevideo.com list
 
 Количество записей:
-**22576**
+**22580**
 YouTube IPs.
 
 Обновление списка раз в час.
