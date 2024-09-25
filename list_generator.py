@@ -85,7 +85,7 @@ def read_ips(ipv4List: list[IPv4Address]):
 
 
 def download_youtubeparsed():
-    url = 'https://raw.githubusercontent.com/EikeiDev/test_block/refs/heads/main/youtubeparsed'
+    url = 'https://raw.githubusercontent.com/EikeiDev/youtube_ip_list/refs/heads/main/youtubeparsed'
     download(url, 'youtubeparsed')
 
 
